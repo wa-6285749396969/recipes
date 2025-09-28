@@ -29,7 +29,6 @@ jobs:
           from xml.etree.ElementTree import Element, SubElement, tostring
           from xml.dom import minidom
           import urllib.parse
-          # --- PERUBAHAN 1: Tambahkan modul untuk request URL dan handling error ---
           import urllib.request 
           import urllib.error
 
@@ -39,19 +38,15 @@ jobs:
           GITHUB_REPO_NAME = "${{ github.event.repository.name }}"
           
           # --- 2. Baca Semua File Konten ---
-          # --- PERUBAHAN 2: Tentukan URL untuk file keyword ---
           keyword_url = "https://dinnerrecipes.github.io/keyword/keyword.txt"
           
           try:
               with open('domain.txt', 'r') as f:
                   domain = f.read().strip()
               
-              # --- PERUBAHAN 3: Ambil keyword dari URL, bukan file lokal ---
               print(f"⬇️  Mengambil keywords dari URL: {keyword_url}")
               with urllib.request.urlopen(keyword_url) as response:
-                  # Baca dan decode konten dari URL
                   keywords_content = response.read().decode('utf-8')
-                  # Ubah menjadi list, hapus baris kosong
                   keywords = [line.strip() for line in keywords_content.splitlines() if line.strip()]
               print(f"👍 Berhasil mendapatkan {len(keywords)} keywords.")
 
@@ -59,11 +54,9 @@ jobs:
                   descriptions_templates = [desc.strip() for desc in f.read().split('---') if desc.strip()]
           
           except FileNotFoundError as e:
-              # Error untuk file lokal yang tidak ditemukan (domain.txt atau deskripsi.txt)
               print(f"❌ Error: File lokal {e.filename} tidak ditemukan.")
               exit(1)
           except urllib.error.URLError as e:
-              # Error jika URL keyword tidak bisa diakses
               print(f"❌ Error saat mengambil keywords dari URL: {e.reason}")
               exit(1)
 
@@ -88,8 +81,15 @@ jobs:
               
               url_keyword = keyword.replace(' ', '-').lower()
               link = f"https://{domain}/detail.html?q={url_keyword}"
-              encoded_keyword = urllib.parse.quote(keyword)
-              image_url = f"https://tse1.mm.bing.net/th?q={encoded_keyword}&w=800&h=1200&c=7&rs=1&p=0"
+
+              # --- PERUBAHAN DIMULAI DI SINI ---
+              # Gabungkan prefix dengan keyword untuk kueri gambar
+              image_query = f"{random_prefix} {keyword}"
+              # Encode kueri gambar yang sudah digabung
+              encoded_image_query = urllib.parse.quote(image_query)
+              # Gunakan kueri yang sudah di-encode dalam URL gambar
+              image_url = f"https://tse1.mm.bing.net/th?q={encoded_image_query}&w=800&h=1200&c=7&rs=1&p=0"
+              # --- PERUBAHAN SELESAI ---
               
               item = SubElement(channel, 'item')
               SubElement(item, 'title').text = title
